@@ -1,0 +1,60 @@
+services:
+  customers-db:
+    image: postgres:15
+    container_name: customers-db
+    environment:
+      POSTGRES_DB: customers
+      POSTGRES_USER: customers
+      POSTGRES_PASSWORD: customers
+    ports:
+      - "5433:5432"
+    networks:
+      - banking-net
+
+  accounts-db:
+    image: postgres:15
+    container_name: accounts-db
+    environment:
+      POSTGRES_DB: accounts
+      POSTGRES_USER: accounts
+      POSTGRES_PASSWORD: accounts
+    ports:
+      - "5434:5432"
+    networks:
+      - banking-net
+
+  customers-service:
+    build:
+      context: ./customers-service
+    container_name: customers-service
+    depends_on:
+      - customers-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://customers-db:5432/customers
+      SPRING_DATASOURCE_USERNAME: customers
+      SPRING_DATASOURCE_PASSWORD: customers
+      # SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092  # por ahora sin Kafka real
+    ports:
+      - "8081:8081"
+    networks:
+      - banking-net
+
+  accounts-service:
+    build:
+      context: ./accounts-service
+    container_name: accounts-service
+    depends_on:
+      - accounts-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://accounts-db:5432/accounts
+      SPRING_DATASOURCE_USERNAME: accounts
+      SPRING_DATASOURCE_PASSWORD: accounts
+      # SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8082:8082"
+    networks:
+      - banking-net
+
+networks:
+  banking-net:
+    driver: bridge

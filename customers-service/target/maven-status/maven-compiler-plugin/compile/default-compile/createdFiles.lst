@@ -1,0 +1,7 @@
+com\example\customers\api\GlobalExceptionHandler.class
+com\example\customers\domain\Person.class
+com\example\customers\api\CustomersController.class
+com\example\customers\application\CustomerService.class
+com\example\customers\domain\Customer.class
+com\example\customers\CustomersServiceApplication.class
+com\example\customers\infra\repository\CustomerRepository.class

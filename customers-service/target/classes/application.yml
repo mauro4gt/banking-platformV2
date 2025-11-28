@@ -1,0 +1,33 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: customers-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/customers
+    username: customers
+    password: customers
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    properties:
+      # ⏱️ Fail fast en dev cuando Kafka no está
+      request.timeout.ms: 2000
+      delivery.timeout.ms: 3000
+    producer:
+      retries: 0
+
+logging:
+  level:
+    root: INFO
+    org.springframework: INFO

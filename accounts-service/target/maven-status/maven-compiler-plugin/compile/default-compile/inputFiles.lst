@@ -1,0 +1,15 @@
+D:\banking-platform\accounts-service\src\main\java\com\example\accounts\AccountsServiceApplication.java
+D:\banking-platform\accounts-service\src\main\java\com\example\accounts\api\AccountsController.java
+D:\banking-platform\accounts-service\src\main\java\com\example\accounts\api\dto\AccountRequest.java
+D:\banking-platform\accounts-service\src\main\java\com\example\accounts\api\dto\AccountResponse.java
+D:\banking-platform\accounts-service\src\main\java\com\example\accounts\api\dto\AccountStatementReport.java
+D:\banking-platform\accounts-service\src\main\java\com\example\accounts\api\GlobalExceptionHandler.java
+D:\banking-platform\accounts-service\src\main\java\com\example\accounts\api\MovementsController.java
+D:\banking-platform\accounts-service\src\main\java\com\example\accounts\api\ReportsController.java
+D:\banking-platform\accounts-service\src\main\java\com\example\accounts\application\AccountService.java
+D:\banking-platform\accounts-service\src\main\java\com\example\accounts\application\MovementService.java
+D:\banking-platform\accounts-service\src\main\java\com\example\accounts\application\ReportService.java
+D:\banking-platform\accounts-service\src\main\java\com\example\accounts\domain\Account.java
+D:\banking-platform\accounts-service\src\main\java\com\example\accounts\domain\Movement.java
+D:\banking-platform\accounts-service\src\main\java\com\example\accounts\infra\repository\AccountRepository.java
+D:\banking-platform\accounts-service\src\main\java\com\example\accounts\infra\repository\MovementRepository.java

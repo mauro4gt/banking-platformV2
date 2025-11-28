@@ -1,0 +1,9 @@
+com\example\accounts\AccountsServiceApplication.class
+com\example\accounts\domain\Movement.class
+com\example\accounts\api\MovementsController.class
+com\example\accounts\infra\repository\MovementRepository.class
+com\example\accounts\infra\repository\AccountRepository.class
+com\example\accounts\api\MovementsController$MovementRequest.class
+com\example\accounts\domain\Account.class
+com\example\accounts\api\GlobalExceptionHandler.class
+com\example\accounts\application\MovementService.class
