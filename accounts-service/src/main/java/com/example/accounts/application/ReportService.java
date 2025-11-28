@@ -27,28 +27,44 @@ public class ReportService {
         this.movementRepository = movementRepository;
     }
 
+    /**
+     * Genera el estado de cuenta para un cliente en un rango de fechas.
+     *
+     * @param customerId id del cliente (el mismo que usas como customerId en Account)
+     * @param startDate  fecha inicial (inclusive)
+     * @param endDate    fecha final   (inclusive)
+     * @return Mono<AccountStatementReport>
+     */
     public Mono<AccountStatementReport> generate(String customerId,
                                                  LocalDate startDate,
                                                  LocalDate endDate) {
+
         return Mono.fromCallable(() -> {
 
+                    // 1) Obtener las cuentas del cliente
                     List<Account> accounts = accountRepository.findByCustomerId(customerId);
                     if (accounts.isEmpty()) {
                         throw new NotFoundException("No accounts found for customer: " + customerId);
                     }
 
-                    LocalDateTime start = startDate.atStartOfDay();
-                    LocalDateTime end = endDate.plusDays(1).atStartOfDay().minusSeconds(1);
+                    // 2) Normalizar rango de fechas a LocalDateTime (inicio de día y fin de día)
+                    LocalDateTime from = startDate.atStartOfDay();
+                    // endDate inclusive → agregamos 1 día y usamos inicio de ese día como límite superior
+                    LocalDateTime to = endDate.plusDays(1).atStartOfDay();
 
+                    // 3) Construir el resumen por cuenta
                     List<AccountStatementReport.AccountSummary> summaries =
                             accounts.stream()
                                     .map(acc -> {
-                                        List<Movement> movements =
-                                                movementRepository.findByAccountAndDateBetween(acc, start, end);
 
-                                        List<AccountStatementReport.MovementItem> items =
+                                        // 3.1) Movimientos de esta cuenta dentro del rango
+                                        List<Movement> movements =
+                                                movementRepository.findByAccountAndDateBetween(acc, from, to);
+
+                                        // 3.2) Mapear a MovementSummary
+                                        List<AccountStatementReport.MovementSummary> items =
                                                 movements.stream()
-                                                        .map(m -> new AccountStatementReport.MovementItem(
+                                                        .map(m -> new AccountStatementReport.MovementSummary(
                                                                 m.getDate(),
                                                                 m.getType(),
                                                                 m.getAmount(),
@@ -56,6 +72,7 @@ public class ReportService {
                                                         ))
                                                         .collect(Collectors.toList());
 
+                                        // 3.3) Crear AccountSummary
                                         return new AccountStatementReport.AccountSummary(
                                                 acc.getNumber(),
                                                 acc.getType(),
@@ -65,6 +82,7 @@ public class ReportService {
                                     })
                                     .collect(Collectors.toList());
 
+                    // 4) Armar el reporte completo
                     return new AccountStatementReport(customerId, summaries);
                 })
                 .subscribeOn(Schedulers.boundedElastic());

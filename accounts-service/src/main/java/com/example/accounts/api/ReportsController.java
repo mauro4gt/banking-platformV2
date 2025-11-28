@@ -19,13 +19,14 @@ public class ReportsController {
         this.reportService = reportService;
     }
 
-    @GetMapping("/{clientId}")
-    public Mono<ResponseEntity<AccountStatementReport>> getReport(
+        @GetMapping("/{clientId}")
+        public Mono<ResponseEntity<AccountStatementReport>> getReport(
             @PathVariable("clientId") String clientId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
         return reportService.generate(clientId, startDate, endDate)
-                .map(ResponseEntity::ok);
+            .map(ResponseEntity::ok);
     }
+
 }

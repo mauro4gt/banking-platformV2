@@ -17,27 +17,41 @@ public class AccountStatementReport {
         this.accounts = accounts;
     }
 
+    // -------- getters / setters --------
+
     public String getCustomerId() {
         return customerId;
+    }
+
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
     }
 
     public List<AccountSummary> getAccounts() {
         return accounts;
     }
 
-    // -------- inner DTOs --------
+    public void setAccounts(List<AccountSummary> accounts) {
+        this.accounts = accounts;
+    }
 
+    // =========================================================
+    //  AccountSummary: información por cada cuenta del cliente
+    // =========================================================
     public static class AccountSummary {
+
         private String accountNumber;
         private String type;
         private BigDecimal initialBalance;
-        private List<MovementItem> movements;
+        private List<MovementSummary> movements;
 
         public AccountSummary() {
         }
 
-        public AccountSummary(String accountNumber, String type,
-                              BigDecimal initialBalance, List<MovementItem> movements) {
+        public AccountSummary(String accountNumber,
+                              String type,
+                              BigDecimal initialBalance,
+                              List<MovementSummary> movements) {
             this.accountNumber = accountNumber;
             this.type = type;
             this.initialBalance = initialBalance;
@@ -48,30 +62,52 @@ public class AccountStatementReport {
             return accountNumber;
         }
 
+        public void setAccountNumber(String accountNumber) {
+            this.accountNumber = accountNumber;
+        }
+
         public String getType() {
             return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
         }
 
         public BigDecimal getInitialBalance() {
             return initialBalance;
         }
 
-        public List<MovementItem> getMovements() {
+        public void setInitialBalance(BigDecimal initialBalance) {
+            this.initialBalance = initialBalance;
+        }
+
+        public List<MovementSummary> getMovements() {
             return movements;
+        }
+
+        public void setMovements(List<MovementSummary> movements) {
+            this.movements = movements;
         }
     }
 
-    public static class MovementItem {
+    // =========================================================
+    //  MovementSummary: detalle de movimientos por cuenta
+    // =========================================================
+    public static class MovementSummary {
+
         private LocalDateTime date;
         private String type;
         private BigDecimal amount;
         private BigDecimal balance;
 
-        public MovementItem() {
+        public MovementSummary() {
         }
 
-        public MovementItem(LocalDateTime date, String type,
-                            BigDecimal amount, BigDecimal balance) {
+        public MovementSummary(LocalDateTime date,
+                               String type,
+                               BigDecimal amount,
+                               BigDecimal balance) {
             this.date = date;
             this.type = type;
             this.amount = amount;
@@ -82,16 +118,32 @@ public class AccountStatementReport {
             return date;
         }
 
+        public void setDate(LocalDateTime date) {
+            this.date = date;
+        }
+
         public String getType() {
             return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
         }
 
         public BigDecimal getAmount() {
             return amount;
         }
 
+        public void setAmount(BigDecimal amount) {
+            this.amount = amount;
+        }
+
         public BigDecimal getBalance() {
             return balance;
+        }
+
+        public void setBalance(BigDecimal balance) {
+            this.balance = balance;
         }
     }
 }
