@@ -9,6 +9,8 @@ import com.example.common.exception.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -28,6 +30,34 @@ public class MovementService {
                            AccountRepository accountRepository) {
         this.movementRepository = movementRepository;
         this.accountRepository = accountRepository;
+    }
+
+
+    // ✅ NUEVA VERSIÓN: ya no usa List en la firma
+    public Flux<Movement> findAll() {
+        return Mono.fromCallable(() -> movementRepository.findAll())
+                .flatMapMany(Flux::fromIterable)
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    // 🔹 NUEVO
+    public Mono<Movement> findById(Long id) {
+        return Mono.fromCallable(() ->
+                        movementRepository.findById(id)
+                                .orElseThrow(() -> new NotFoundException("Movement not found: " + id)))
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    // 🔹 NUEVO
+    public Mono<Void> delete(Long id) {
+        return Mono.fromRunnable(() -> {
+                    if (!movementRepository.existsById(id)) {
+                        throw new NotFoundException("Movement not found: " + id);
+                    }
+                    movementRepository.deleteById(id);
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .then();
     }
 
     public Mono<Movement> registerMovement(Long accountId, BigDecimal amount, String type) {

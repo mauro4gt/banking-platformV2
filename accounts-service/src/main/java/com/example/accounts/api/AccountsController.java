@@ -44,6 +44,26 @@ public class AccountsController {
                 .map(ResponseEntity::ok);
     }
 
+    // 🔹 NUEVO: actualizar cuenta
+    @PutMapping("/{id}")
+    public Mono<ResponseEntity<AccountResponse>> update(@PathVariable Long id,
+                                                        @RequestBody Mono<AccountRequest> request) {
+        return request
+                .map(this::toDomain)
+                .flatMap(account -> service.update(id, account))
+                .map(this::toResponse)
+                .map(ResponseEntity::ok);
+    }
+
+    // 🔹 NUEVO: eliminar cuenta
+    @DeleteMapping("/{id}")
+    public Mono<ResponseEntity<Void>> delete(@PathVariable Long id) {
+        return service.delete(id)
+                .thenReturn(ResponseEntity.noContent().build());
+    }
+
+
+
     // ------------ mapping helpers ------------
 
     private Account toDomain(AccountRequest req) {

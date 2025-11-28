@@ -34,4 +34,35 @@ public class AccountService {
         return Mono.fromCallable(repository::findAll)
                 .subscribeOn(Schedulers.boundedElastic());
     }
+
+    // 🔹 NUEVO: update
+    public Mono<Account> update(Long id, Account update) {
+        return Mono.fromCallable(() -> {
+                    Account current = repository.findById(id)
+                            .orElseThrow(() -> new NotFoundException("Account not found: " + id));
+
+                    current.setNumber(update.getNumber());
+                    current.setType(update.getType());
+                    current.setInitialBalance(update.getInitialBalance());
+                    current.setState(update.getState());
+                    current.setCustomerId(update.getCustomerId());
+
+                    return repository.save(current);
+                })
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    // 🔹 NUEVO: delete
+    public Mono<Void> delete(Long id) {
+        return Mono.fromRunnable(() -> {
+                    if (!repository.existsById(id)) {
+                        throw new NotFoundException("Account not found: " + id);
+                    }
+                    repository.deleteById(id);
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .then();
+    }
+
+
 }
