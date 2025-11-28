@@ -1,7 +1,7 @@
+D:\banking-platform\customers-service\src\main\java\com\example\customers\CustomersServiceApplication.java
+D:\banking-platform\customers-service\src\main\java\com\example\customers\domain\Person.java
 D:\banking-platform\customers-service\src\main\java\com\example\customers\api\CustomersController.java
 D:\banking-platform\customers-service\src\main\java\com\example\customers\api\GlobalExceptionHandler.java
-D:\banking-platform\customers-service\src\main\java\com\example\customers\application\CustomerService.java
-D:\banking-platform\customers-service\src\main\java\com\example\customers\CustomersServiceApplication.java
-D:\banking-platform\customers-service\src\main\java\com\example\customers\domain\Customer.java
-D:\banking-platform\customers-service\src\main\java\com\example\customers\domain\Person.java
 D:\banking-platform\customers-service\src\main\java\com\example\customers\infra\repository\CustomerRepository.java
+D:\banking-platform\customers-service\src\main\java\com\example\customers\application\CustomerService.java
+D:\banking-platform\customers-service\src\main\java\com\example\customers\domain\Customer.java

@@ -30,11 +30,12 @@ services:
     container_name: customers-service
     depends_on:
       - customers-db
+      - kafka
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://customers-db:5432/customers
       SPRING_DATASOURCE_USERNAME: customers
       SPRING_DATASOURCE_PASSWORD: customers
-      # SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092  # por ahora sin Kafka real
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     ports:
       - "8081:8081"
     networks:
@@ -47,13 +48,44 @@ services:
     container_name: accounts-service
     depends_on:
       - accounts-db
+      - kafka
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://accounts-db:5432/accounts
       SPRING_DATASOURCE_USERNAME: accounts
       SPRING_DATASOURCE_PASSWORD: accounts
-      # SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     ports:
       - "8082:8082"
+    networks:
+      - banking-net
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - banking-net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "9092:9092"
     networks:
       - banking-net
 
