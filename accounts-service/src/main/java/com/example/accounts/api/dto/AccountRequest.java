@@ -1,13 +1,21 @@
 package com.example.accounts.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 import java.math.BigDecimal;
 
 public class AccountRequest {
 
+    @JsonAlias({"number", "accountNumber"})
     private String number;
+
     private String type;
+
     private BigDecimal initialBalance;
+
+    @JsonAlias({"state", "status"})
     private Boolean state;
+
     private String customerId;
 
     public AccountRequest() {
