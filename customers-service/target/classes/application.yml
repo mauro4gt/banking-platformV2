@@ -20,12 +20,13 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092
-    properties:
-      # ⏱️ Fail fast en dev cuando Kafka no está
-      request.timeout.ms: 2000
-      delivery.timeout.ms: 3000
     producer:
       retries: 0
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    properties:
+      request.timeout.ms: 2000
+      delivery.timeout.ms: 3000
 
 logging:
   level:

@@ -25,7 +25,8 @@ services:
 
   customers-service:
     build:
-      context: ./customers-service
+      context: .
+      dockerfile: customers-service/Dockerfile
     container_name: customers-service
     depends_on:
       - customers-db
@@ -41,7 +42,8 @@ services:
 
   accounts-service:
     build:
-      context: ./accounts-service
+      context: .
+      dockerfile: accounts-service/Dockerfile
     container_name: accounts-service
     depends_on:
       - accounts-db
