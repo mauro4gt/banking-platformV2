@@ -5,6 +5,7 @@ WORKDIR /workspace
 # Copiamos los poms primero para cachear dependencias
 COPY pom.xml ./pom.xml
 COPY common/pom.xml ./common/pom.xml
+COPY accounts-service/pom.xml ./accounts-service/pom.xml
 COPY customers-service/pom.xml ./customers-service/pom.xml
 
 # Copiamos código fuente requerido para compilar este módulo y dependencias
