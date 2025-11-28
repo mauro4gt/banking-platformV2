@@ -18,11 +18,30 @@ public class AccountService {
         this.repository = repository;
     }
 
+    // CREATE
     public Mono<Account> create(Account account) {
         return Mono.fromCallable(() -> repository.save(account))
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
+    // UPDATE
+    public Mono<Account> update(Long id, Account data) {
+        return Mono.fromCallable(() -> {
+                    return repository.findById(id)
+                            .map(existing -> {
+                                existing.setNumber(data.getNumber());
+                                existing.setType(data.getType());
+                                existing.setInitialBalance(data.getInitialBalance());
+                                existing.setState(data.getState());
+                                existing.setCustomerId(data.getCustomerId());
+                                return repository.save(existing);
+                            })
+                            .orElseThrow(() -> new NotFoundException("Account not found: " + id));
+                })
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    // READ by id
     public Mono<Account> findById(Long id) {
         return Mono.fromCallable(() ->
                         repository.findById(id)
@@ -30,29 +49,19 @@ public class AccountService {
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
+    // READ all
     public Mono<List<Account>> findAll() {
         return Mono.fromCallable(repository::findAll)
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
-    // 🔹 NUEVO: update
-    public Mono<Account> update(Long id, Account update) {
-        return Mono.fromCallable(() -> {
-                    Account current = repository.findById(id)
-                            .orElseThrow(() -> new NotFoundException("Account not found: " + id));
-
-                    current.setNumber(update.getNumber());
-                    current.setType(update.getType());
-                    current.setInitialBalance(update.getInitialBalance());
-                    current.setState(update.getState());
-                    current.setCustomerId(update.getCustomerId());
-
-                    return repository.save(current);
-                })
+    // READ by customerId
+    public Mono<List<Account>> findByCustomerId(String customerId) {
+        return Mono.fromCallable(() -> repository.findByCustomerId(customerId))
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
-    // 🔹 NUEVO: delete
+    // DELETE
     public Mono<Void> delete(Long id) {
         return Mono.fromRunnable(() -> {
                     if (!repository.existsById(id)) {
@@ -63,6 +72,4 @@ public class AccountService {
                 .subscribeOn(Schedulers.boundedElastic())
                 .then();
     }
-
-
 }

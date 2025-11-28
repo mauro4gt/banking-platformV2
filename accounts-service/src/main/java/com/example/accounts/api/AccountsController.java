@@ -21,6 +21,7 @@ public class AccountsController {
         this.service = service;
     }
 
+    // POST /api/v1/accounts
     @PostMapping
     public Mono<ResponseEntity<AccountResponse>> create(@RequestBody Mono<AccountRequest> request) {
         return request
@@ -30,13 +31,7 @@ public class AccountsController {
                 .map(resp -> ResponseEntity.status(201).body(resp));
     }
 
-    @GetMapping
-    public Flux<AccountResponse> getAll() {
-        return service.findAll()
-                .flatMapMany(Flux::fromIterable)
-                .map(this::toResponse);
-    }
-
+    // GET /api/v1/accounts/{id}
     @GetMapping("/{id}")
     public Mono<ResponseEntity<AccountResponse>> getById(@PathVariable Long id) {
         return service.findById(id)
@@ -44,38 +39,52 @@ public class AccountsController {
                 .map(ResponseEntity::ok);
     }
 
-    // 🔹 NUEVO: actualizar cuenta
+    // GET /api/v1/accounts
+    @GetMapping
+    public Flux<AccountResponse> getAll() {
+        return service.findAll()
+                .flatMapMany(Flux::fromIterable)
+                .map(this::toResponse);
+    }
+
+    // GET /api/v1/accounts/customer/{customerId}
+    @GetMapping("/customer/{customerId}")
+    public Flux<AccountResponse> getByCustomer(@PathVariable String customerId) {
+        return service.findByCustomerId(customerId)
+                .flatMapMany(Flux::fromIterable)
+                .map(this::toResponse);
+    }
+
+    // PUT /api/v1/accounts/{id}
     @PutMapping("/{id}")
     public Mono<ResponseEntity<AccountResponse>> update(@PathVariable Long id,
                                                         @RequestBody Mono<AccountRequest> request) {
         return request
                 .map(this::toDomain)
-                .flatMap(account -> service.update(id, account))
+                .flatMap(acc -> service.update(id, acc))
                 .map(this::toResponse)
                 .map(ResponseEntity::ok);
     }
 
-    // 🔹 NUEVO: eliminar cuenta
+    // DELETE /api/v1/accounts/{id}
     @DeleteMapping("/{id}")
     public Mono<ResponseEntity<Void>> delete(@PathVariable Long id) {
         return service.delete(id)
                 .thenReturn(ResponseEntity.noContent().build());
     }
 
-
-
-    // ------------ mapping helpers ------------
-
-    private Account toDomain(AccountRequest req) {
+    // Mapper de DTO -> dominio
+    private Account toDomain(AccountRequest dto) {
         Account account = new Account();
-        account.setNumber(req.getNumber());
-        account.setType(req.getType());
-        account.setInitialBalance(req.getInitialBalance());
-        account.setState(req.getState());
-        account.setCustomerId(req.getCustomerId());
+        account.setNumber(dto.getNumber());
+        account.setType(dto.getType());
+        account.setInitialBalance(dto.getInitialBalance());
+        account.setState(dto.getState());
+        account.setCustomerId(dto.getCustomerId());
         return account;
     }
 
+    // Mapper de dominio -> DTO
     private AccountResponse toResponse(Account account) {
         return new AccountResponse(
                 account.getId(),

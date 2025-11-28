@@ -18,31 +18,57 @@ import java.util.UUID;
 public class CustomerService {
 
     private static final Logger log = LoggerFactory.getLogger(CustomerService.class);
+    private static final String TOPIC = "customers-events";
 
     private final CustomerRepository repository;
     private final KafkaTemplate<String, CustomerEvent> kafkaTemplate;
 
-    // ✅ Constructor explícito para inyección de dependencias
     public CustomerService(CustomerRepository repository,
                            KafkaTemplate<String, CustomerEvent> kafkaTemplate) {
         this.repository = repository;
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    /**
-     * Crea un cliente en BD y publica un evento a Kafka de forma asíncrona.
-     * La publicación en Kafka NO bloquea el response del endpoint.
-     */
+    // CREATE
     public Mono<Customer> create(Customer customer) {
-        return Mono.fromCallable(() -> {
-                    log.info("Creating customer {}", customer.getIdentification());
-                    return repository.save(customer);
-                })
-                .subscribeOn(Schedulers.boundedElastic())
-                // 👇 Aquí disparamos la publicación a Kafka como efecto secundario
-                .doOnSuccess(saved -> publishAsync(saved, "CUSTOMER_CREATED"));
+        return Mono.fromCallable(() -> repository.save(customer))
+                .doOnSuccess(c -> sendEvent("CUSTOMER_CREATED", c))
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
+    // UPDATE
+    public Mono<Customer> update(String id, Customer data) {
+        return Mono.fromCallable(() -> {
+                    Customer existing = repository.findById(id)
+                            .orElseThrow(() -> new NotFoundException("Customer not found: " + id));
+
+                    existing.setName(data.getName());
+                    existing.setGender(data.getGender());
+                    existing.setAddress(data.getAddress());
+                    existing.setPhone(data.getPhone());
+                    existing.setPassword(data.getPassword());
+                    existing.setState(data.getState());
+
+                    Customer saved = repository.save(existing);
+                    sendEvent("CUSTOMER_UPDATED", saved);
+                    return saved;
+                })
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    // DELETE (lógico o físico, según tu modelo; aquí físico)
+    public Mono<Void> delete(String id) {
+        return Mono.fromRunnable(() -> {
+                    Customer existing = repository.findById(id)
+                            .orElseThrow(() -> new NotFoundException("Customer not found: " + id));
+                    repository.delete(existing);
+                    sendEvent("CUSTOMER_DELETED", existing);
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .then();
+    }
+
+    // READ by id
     public Mono<Customer> findById(String id) {
         return Mono.fromCallable(() ->
                         repository.findById(id)
@@ -50,40 +76,33 @@ public class CustomerService {
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
+    // READ all
     public Mono<List<Customer>> findAll() {
         return Mono.fromCallable(repository::findAll)
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
-    /**
-     * Publica el evento en Kafka de forma asíncrona (fire-and-forget).
-     * Si Kafka está caído, se loguea el error pero NO se rompe el flujo principal.
-     */
-    private void publishAsync(Customer customer, String type) {
-        if (kafkaTemplate == null) {
-            return;
-        }
-
-        CustomerEvent event = new CustomerEvent(
-                UUID.randomUUID().toString(),
-                type,
-                customer.getIdentification(),
-                customer.getState()
-        );
-
+    // Envío de evento a Kafka
+    private void sendEvent(String type, Customer customer) {
         try {
-            kafkaTemplate.send("customer-events", event.getCustomerId(), event)
-                .whenComplete((result, ex) -> {
-                if (ex == null) {
-                log.info("Customer event sent to Kafka: type={}, customerId={}",
-                    type, event.getCustomerId());
-                } else {
-                log.warn("Failed to send customer event to Kafka. Continuing without publishing.", ex);
-          }
-    });
+            CustomerEvent event = new CustomerEvent(
+                    UUID.randomUUID().toString(),
+                    type,
+                    customer.getIdentification(),
+                    customer.getState()
+            );
+
+            kafkaTemplate.send(TOPIC, event.getCustomerId(), event)
+                    .whenComplete((result, ex) -> {
+                        if (ex == null) {
+                            log.info("Customer event sent to Kafka: type={}, customerId={}",
+                                    type, event.getCustomerId());
+                        } else {
+                            log.warn("Failed to send customer event to Kafka. Continuing without publishing.", ex);
+                        }
+                    });
 
         } catch (Exception ex) {
-            // Por seguridad, pero normalmente no debería lanzar aquí
             log.warn("Unexpected error sending event to Kafka", ex);
         }
     }

@@ -9,46 +9,60 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/movements")
 public class MovementsController {
 
-    private final MovementService service;
+    private final MovementService movementService;
 
-    public MovementsController(MovementService service) {
-        this.service = service;
+    public MovementsController(MovementService movementService) {
+        this.movementService = movementService;
     }
 
+    // POST /api/v1/movements
     @PostMapping
     public Mono<ResponseEntity<Movement>> create(@RequestBody Mono<MovementRequest> request) {
         return request
-                .flatMap(req -> service.registerMovement(req.getAccountId(), req.getAmount(), req.getType()))
-                .map(mov -> ResponseEntity.status(HttpStatus.CREATED).body(mov));
+                .flatMap(r -> movementService.create(r.getAccountId(), r.getType(), r.getAmount()))
+                .map(m -> ResponseEntity.status(HttpStatus.CREATED).body(m));
     }
 
-    // ✅ NUEVO: listar todos SIN usar List
-    @GetMapping
-    public Flux<Movement> getAll() {
-        return service.findAll();
-    }
-
+    // GET /api/v1/movements/{id}
     @GetMapping("/{id}")
     public Mono<ResponseEntity<Movement>> getById(@PathVariable Long id) {
-        return service.findById(id)
+        return movementService.findById(id)
                 .map(ResponseEntity::ok);
     }
 
+    // GET /api/v1/movements?accountId=...
+    @GetMapping
+    public Flux<Movement> getAll(@RequestParam(value = "accountId", required = false) Long accountId) {
+        if (accountId != null) {
+            return movementService.findByAccount(accountId)
+                    .flatMapMany(Flux::fromIterable);
+        }
+        return movementService.findAll()
+                .flatMapMany(Flux::fromIterable);
+    }
+
+    // DELETE /api/v1/movements/{id}
     @DeleteMapping("/{id}")
     public Mono<ResponseEntity<Void>> delete(@PathVariable Long id) {
-        return service.delete(id)
+        return movementService.delete(id)
                 .thenReturn(ResponseEntity.noContent().build());
     }
 
+    // DTO de entrada para registrar movimientos
     public static class MovementRequest {
+
         private Long accountId;
         private String type;
         private BigDecimal amount;
+
+        public MovementRequest() {
+        }
 
         public Long getAccountId() {
             return accountId;
