@@ -3,6 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
   <groupId>com.example</groupId>
   <artifactId>banking-platform</artifactId>
   <version>1.0.0-SNAPSHOT</version>
@@ -12,6 +13,7 @@
     <java.version>17</java.version>
     <spring.boot.version>3.3.0</spring.boot.version>
     <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+    <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
   </properties>
 
   <modules>
@@ -35,14 +37,27 @@
   <build>
     <pluginManagement>
       <plugins>
+        <!-- Spring Boot plugin para los módulos -->
         <plugin>
           <groupId>org.springframework.boot</groupId>
           <artifactId>spring-boot-maven-plugin</artifactId>
           <version>${spring.boot.version}</version>
         </plugin>
+
+        <!-- Surefire para ejecutar JUnit 5 correctamente -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${maven-surefire-plugin.version}</version>
+          <configuration>
+            <useModulePath>false</useModulePath>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
+
     <plugins>
+      <!-- Compilador Java 17 -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -53,4 +68,5 @@
       </plugin>
     </plugins>
   </build>
+
 </project>

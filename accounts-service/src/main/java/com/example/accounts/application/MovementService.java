@@ -9,6 +9,7 @@ import com.example.common.exception.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -31,19 +32,84 @@ public class MovementService {
         this.accountRepository = accountRepository;
     }
 
-    // CREATE movimiento (crédito/débito)
+    // =========================================================
+    // Métodos esperados por MovementsController
+    // =========================================================
+
+    /**
+     * Método que usa el controller en el POST.
+     * Delegamos en registerMovement para centralizar la lógica.
+     */
     public Mono<Movement> create(Long accountId, String type, BigDecimal amount) {
+        return registerMovement(accountId, amount, type);
+    }
+
+    /**
+     * GET /api/v1/movements?accountId=...
+     */
+    public Flux<Movement> findByAccount(Long accountId) {
         return Mono.fromCallable(() -> {
                     Account account = accountRepository.findById(accountId)
                             .orElseThrow(() -> new NotFoundException("Account not found: " + accountId));
 
+                    // Usamos todo el rango de fechas
+                    List<Movement> list = movementRepository.findByAccountAndDateBetween(
+                            account,
+                            LocalDateTime.MIN,
+                            LocalDateTime.MAX
+                    );
+                    return list;
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMapMany(Flux::fromIterable);
+    }
+
+    /**
+     * GET /api/v1/movements  (sin filtros)
+     */
+    public Flux<Movement> findAll() {
+        return Mono.fromCallable(movementRepository::findAll)
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMapMany(Flux::fromIterable);
+    }
+
+    // =========================================================
+    // Lógica de negocio principal (F2 / F3)
+    // =========================================================
+
+    /**
+     * Lógica central de registro de movimiento (débito/crédito).
+     * Este método lo usan:
+     * - create(...) (controller)
+     * - tests unitarios (MovementServiceTest)
+     */
+    public Mono<Movement> registerMovement(Long accountId, BigDecimal amount, String type) {
+        return Mono.fromCallable(() -> {
+                    if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+                        throw new BusinessException("Movement amount must be greater than zero");
+                    }
+
+                    Account account = accountRepository.findById(accountId)
+                            .orElseThrow(() -> new NotFoundException("Account not found: " + accountId));
+
                     BigDecimal currentBalance = getCurrentBalance(account);
-                    BigDecimal newBalance = calculateNewBalance(currentBalance, type, amount);
+
+                    BigDecimal newBalance;
+                    if ("DEBIT".equalsIgnoreCase(type)) {
+                        if (currentBalance.compareTo(amount) < 0) {
+                            throw new BusinessException("Saldo no disponible");
+                        }
+                        newBalance = currentBalance.subtract(amount);
+                    } else if ("CREDIT".equalsIgnoreCase(type)) {
+                        newBalance = currentBalance.add(amount);
+                    } else {
+                        throw new BusinessException("Invalid movement type");
+                    }
 
                     Movement movement = new Movement();
                     movement.setAccount(account);
                     movement.setDate(LocalDateTime.now());
-                    movement.setType(type);
+                    movement.setType(type.toUpperCase());
                     movement.setAmount(amount);
                     movement.setBalance(newBalance);
 
@@ -55,7 +121,10 @@ public class MovementService {
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
-    // READ by id
+    // =========================================================
+    // Otros métodos de CRUD que probablemente usa tu código
+    // =========================================================
+
     public Mono<Movement> findById(Long id) {
         return Mono.fromCallable(() ->
                         movementRepository.findById(id)
@@ -63,29 +132,6 @@ public class MovementService {
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
-    // READ all
-    public Mono<List<Movement>> findAll() {
-        return Mono.fromCallable(movementRepository::findAll)
-                .subscribeOn(Schedulers.boundedElastic());
-    }
-
-    // READ por cuenta
-    public Mono<List<Movement>> findByAccount(Long accountId) {
-        return Mono.fromCallable(() -> {
-                    Account account = accountRepository.findById(accountId)
-                            .orElseThrow(() -> new NotFoundException("Account not found: " + accountId));
-
-                    // rango completo
-                    return movementRepository.findByAccountAndDateBetween(
-                            account,
-                            LocalDateTime.MIN,
-                            LocalDateTime.MAX
-                    );
-                })
-                .subscribeOn(Schedulers.boundedElastic());
-    }
-
-    // DELETE
     public Mono<Void> delete(Long id) {
         return Mono.fromRunnable(() -> {
                     if (!movementRepository.existsById(id)) {
@@ -97,25 +143,13 @@ public class MovementService {
                 .then();
     }
 
-    // ==== helpers de negocio ====
-
-    private BigDecimal calculateNewBalance(BigDecimal current, String type, BigDecimal amount) {
-        BigDecimal newBalance;
-        if ("CREDIT".equalsIgnoreCase(type)) {
-            newBalance = current.add(amount);
-        } else if ("DEBIT".equalsIgnoreCase(type)) {
-            newBalance = current.subtract(amount);
-            if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
-                throw new BusinessException("Saldo no disponible");
-            }
-        } else {
-            throw new BusinessException("Tipo de movimiento no soportado: " + type);
-        }
-        return newBalance;
-    }
+    // =========================================================
+    // Helpers internos
+    // =========================================================
 
     private BigDecimal getCurrentBalance(Account account) {
         Optional<Movement> last = movementRepository.findTopByAccountOrderByDateDesc(account);
-        return last.map(Movement::getBalance).orElse(account.getInitialBalance());
+        return last.map(Movement::getBalance)
+                   .orElse(account.getInitialBalance());
     }
 }

@@ -9,7 +9,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/movements")
@@ -21,7 +20,7 @@ public class MovementsController {
         this.movementService = movementService;
     }
 
-    // POST /api/v1/movements
+    // ================== POST ==================
     @PostMapping
     public Mono<ResponseEntity<Movement>> create(@RequestBody Mono<MovementRequest> request) {
         return request
@@ -29,32 +28,32 @@ public class MovementsController {
                 .map(m -> ResponseEntity.status(HttpStatus.CREATED).body(m));
     }
 
-    // GET /api/v1/movements/{id}
+    // ================== GET BY ID ==================
     @GetMapping("/{id}")
     public Mono<ResponseEntity<Movement>> getById(@PathVariable Long id) {
         return movementService.findById(id)
                 .map(ResponseEntity::ok);
     }
 
-    // GET /api/v1/movements?accountId=...
+    // ================== GET ALL / BY ACCOUNT ==================
     @GetMapping
     public Flux<Movement> getAll(@RequestParam(value = "accountId", required = false) Long accountId) {
         if (accountId != null) {
-            return movementService.findByAccount(accountId)
-                    .flatMapMany(Flux::fromIterable);
+            // ahora movementService.findByAccount devuelve Flux<Movement>
+            return movementService.findByAccount(accountId);
         }
-        return movementService.findAll()
-                .flatMapMany(Flux::fromIterable);
+        // ahora movementService.findAll devuelve Flux<Movement>
+        return movementService.findAll();
     }
 
-    // DELETE /api/v1/movements/{id}
+    // ================== DELETE ==================
     @DeleteMapping("/{id}")
     public Mono<ResponseEntity<Void>> delete(@PathVariable Long id) {
         return movementService.delete(id)
                 .thenReturn(ResponseEntity.noContent().build());
     }
 
-    // DTO de entrada para registrar movimientos
+    // ================== DTO de request ==================
     public static class MovementRequest {
 
         private Long accountId;
